@@ -1,7 +1,7 @@
 name: Deploy to AWS App Runner
 on:
   push:
-    branches: [ main ]  # or your default branch
+    branches: [ master ]  # or your default branch
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -28,6 +28,7 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Build, tag, and push image to Amazon ECR
+      id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
