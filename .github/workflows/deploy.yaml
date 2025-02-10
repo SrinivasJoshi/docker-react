@@ -27,4 +27,22 @@ jobs:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
       - name: Trigger DO App Platform deployment
-        run: doctl apps update ${{ secrets.DO_APP_ID }} --force-rebuild
+        run: |
+          DEPLOYMENT_ID=$(doctl apps create-deployment ${{ secrets.DO_APP_ID }} --format ID --no-header)
+          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV
+          
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment ${{ env.DEPLOYMENT_ID }}..."
+          while true; do
+            STATUS=$(doctl apps get-deployment ${{ secrets.DO_APP_ID }} ${{ env.DEPLOYMENT_ID }} --format Progress.Steps[0].Status --no-header)
+            echo "Deployment status: $STATUS"
+            if [ "$STATUS" = "SUCCESS" ]; then
+              echo "✅ Deployment successful!"
+              break
+            elif [ "$STATUS" = "ERROR" ]; then
+              echo "❌ Deployment failed!"
+              exit 1
+            fi
+            sleep 10
+          done
